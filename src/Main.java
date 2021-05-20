@@ -98,7 +98,7 @@ public class Main extends Application {
 				highlightedTiles[i+1] = board.gameBoard[selectedTileIndex].moves.get(i);
 			}
 		}
-//TODO detect bad second click
+
 		else if(selectedLocations == 2) {
 			//TODO Check if move puts own king in check
 
