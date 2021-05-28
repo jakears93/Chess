@@ -70,13 +70,6 @@ class GameServer {
 			}
 		}
 		
-		//Call function is running of game
-		//Assign colour to each player
-		//Start game on white turn
-		//Wait for turn info to be sent
-		//Modify board to reflect turn sent
-		//Switch turns, send last turn to next player
-		//End game, modify mmr of each player
 		@Override 
 		public Void call() throws Exception{
 			//Hold turn information
@@ -100,6 +93,20 @@ class GameServer {
 		    	p2Out.write(board.playerTurn);
 		    	p1Out.flush();
 		    	p2Out.flush();
+		    	
+		    	//Send last turn to new player, turn has already been switched on board so send on match
+		    	if(board.playerTurn == p1.getPieceColour()) {
+		    		for(int i=0; i<4; i++) {
+		    			p1Out.write(turn[i]);
+		    		}
+		    		p1Out.flush();
+		    	}
+		    	else {
+		    		for(int i=0; i<4; i++) {
+		    			p2Out.write(turn[i]);
+		    		}
+		    		p2Out.flush();
+		    	}
 		    
 		    	//Wait for turn from player
 		    	int index = 0;
@@ -122,23 +129,10 @@ class GameServer {
 		    	board.performTurn(turn[0], turn[1]);
 		    	//Perform second piece movement (castling only)
 		    	if(turn[2] != -1) {
+		    		board.switchTurn();
 			    	board.performTurn(turn[2], turn[3]);
 		    	}
-		    	
-		    	//Send last turn to new player, turn has already been switched on board so send on match
-		    	if(board.playerTurn == p1.getPieceColour()) {
-		    		for(int i=0; i<4; i++) {
-		    			p1Out.write(turn[i]);
-		    		}
-		    		p1Out.flush();
-		    	}
-		    	else {
-		    		for(int i=0; i<4; i++) {
-		    			p2Out.write(turn[i]);
-		    		}
-		    		p2Out.flush();
-		    	}
-		    	
+		    		    	
 		    }
 			
 		    //TODO Game over, now modify mmr and close game
@@ -159,7 +153,7 @@ class GameServer {
 	}
 	
 	private static class MatchMaker implements Callable<Void>{
-		
+		//TODO implement matchmaking based on skill
 		@Override
 		public Void call() throws Exception {
 			while(serverIsActive) {

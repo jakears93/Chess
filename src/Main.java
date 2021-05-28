@@ -13,10 +13,8 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
-
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import javafx.application.Application;
@@ -85,20 +83,31 @@ public class Main extends Application {
 		showMainMenu();
 	}
 	
-	public void selectPiece(int selectedTileIndex) {		
+	public void selectPiece(int selectedTileIndex) {
+		//Check if online game
+		if(gameMode == 0) {
+			//Check if players turn
+			if(GameClient.playerTurn == player.getPieceColour()) {
+				//Move on to piece selection
+			}
+			else {
+				//Do nothing
+				return;
+			}
+		}
 		//Increment selected locations
 		selectedLocations++;
 		
 		//Check whether first or second position selected
 		if(selectedLocations==1) {
 			//Check if tile is occupied, if not, exit handler
-			if(board.gameBoard[selectedTileIndex] == null) {
+			if(GameClient.board.gameBoard[selectedTileIndex] == null) {
 				selectedLocations --;
 				return;
 			}
 			
 			//Check if it is the correct players turn, if not, exit handler
-			if(board.gameBoard[selectedTileIndex].getColour() != board.playerTurn) {
+			if(GameClient.board.gameBoard[selectedTileIndex].getColour() != GameClient.board.playerTurn) {
 				selectedLocations --;
 				return;
 			}
@@ -107,12 +116,12 @@ public class Main extends Application {
 			playAreaRectangles[selectedTileIndex].setFill(Color.TOMATO);
 			
 			//Calculate Valid Moves
-			board.calculatePieceMoves(selectedTileIndex);
+			GameClient.board.calculatePieceMoves(selectedTileIndex);
 			
 			//Highlight valid moves light blue
-			for(int i=0; i<board.gameBoard[selectedTileIndex].moves.size(); i++) {
-				playAreaRectangles[board.gameBoard[selectedTileIndex].moves.get(i)].setFill(Color.TURQUOISE);
-				highlightedTiles[i+1] = board.gameBoard[selectedTileIndex].moves.get(i);
+			for(int i=0; i<GameClient.board.gameBoard[selectedTileIndex].moves.size(); i++) {
+				playAreaRectangles[GameClient.board.gameBoard[selectedTileIndex].moves.get(i)].setFill(Color.TURQUOISE);
+				highlightedTiles[i+1] = GameClient.board.gameBoard[selectedTileIndex].moves.get(i);
 			}
 		}
 
@@ -120,9 +129,9 @@ public class Main extends Application {
 			//TODO Check if move puts own king in check
 
 			//Iterate through all moves of first selected piece (the first highlighted tile location)
-			for(int i=0; i<board.gameBoard[highlightedTiles[0]].moves.size(); i++) {
+			for(int i=0; i<GameClient.board.gameBoard[highlightedTiles[0]].moves.size(); i++) {
 				//Check is selected tile index is in move list for first selected piece
-				if(selectedTileIndex == board.gameBoard[highlightedTiles[0]].moves.get(i)) {
+				if(selectedTileIndex == GameClient.board.gameBoard[highlightedTiles[0]].moves.get(i)) {
 					
 					//Check if new tile location is occupied by opponents piece
 					//If occupied, remove icon from drawing list as well as icon map
@@ -152,13 +161,17 @@ public class Main extends Application {
 					objectList.add(icons.get(selectedTileIndex));
 					
 					//Move Piece internally and switch turns
-					board.performTurn(highlightedTiles[0], board.gameBoard[highlightedTiles[0]].moves.get(i));
+					int src = highlightedTiles[0];
+					int dest = GameClient.board.gameBoard[highlightedTiles[0]].moves.get(i);
+					GameClient.board.performTurn(src, dest);
+					GameClient.lastTurn[0] = src;
+					GameClient.lastTurn[1] = dest;
+					
+					//Send Turn to server
+					client.sendTurnToServer(gameMode);
 					
 					//Mark turn as complete
 					turnCompleted = true;
-					
-					//Send Turn to server
-					//TODO
 					
 					//Exit for-loop
 					break;
@@ -177,12 +190,12 @@ public class Main extends Application {
 			turnCompleted = false;
 			
 			//Check if game is over, exit application
-			if(board.hasCheckmate) {
-				finalizeGame(board.getWinner());
+			if(GameClient.board.hasCheckmate) {
+				finalizeGame(GameClient.board.getWinner());
 			}
 			
 			//If board has check, highlight tile of King piece under check
-			if(board.hasCheck) {
+			if(GameClient.board.hasCheck) {
 				//TODO
 			}
 			
@@ -410,13 +423,13 @@ public class Main extends Application {
 		//icon positions are tied to the position of the gridpane object (play area), position is translated from center of the play area
 		icons = new HashMap<Integer, ImageView>();
 		for(int i=0; i<64; i++) {
-			if(board.gameBoard[i] != null) {
+			if(GameClient.board.gameBoard[i] != null) {
 				icons.put(i, new ImageView());
-				icons.get(i).setImage(board.gameBoard[i].icon);
+				icons.get(i).setImage(GameClient.board.gameBoard[i].icon);
 				icons.get(i).setFitHeight(xUnit);
 				icons.get(i).setFitWidth(yUnit);
-				int yRaw = (board.gameBoard[i].getPos())/8;
-				int xRaw = (board.gameBoard[i].getPos())%8;
+				int yRaw = (GameClient.board.gameBoard[i].getPos())/8;
+				int xRaw = (GameClient.board.gameBoard[i].getPos())%8;
 				double xTranslate = xUnit*(-5+xRaw);
 				double yTranslate = yUnit*(-3.5+yRaw);
 				icons.get(i).setTranslateX(xTranslate);
@@ -444,16 +457,8 @@ public class Main extends Application {
 	
 	//Start a fresh game
 	public void startGame(int gameMode) {
-		if (gameMode ==0) {
-			//TODO online game mode
-			client = new GameClient(player);
-			client.connect();
-			setupInternalBoard();
-		}
-		else if(gameMode == 1) {
-			setupInternalBoard();
-		}
-			
+		client = new GameClient(player, gameMode);
+		setupInternalBoard();	
 		setupPlayArea(primaryStage);
 	}
 	
@@ -467,14 +472,6 @@ public class Main extends Application {
 		
 		//Reset selected pieces
 		selectedLocations = 0;
-		
-		//Initialize Board
-		board = new Board();
-		try {
-			board.initBoard();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
 		
 		//Ready first turn
 		turnCompleted = false;

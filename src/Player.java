@@ -2,6 +2,8 @@ import java.io.Serializable;
 import java.net.Socket;
 
 public class Player implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 	//Constants
 	final short WHITE = -1;
 	final short BLACK = 1;

@@ -104,8 +104,7 @@ public class Board implements Serializable {
 		this.gameBoard[pos] = null;
 		
 		//Set Flag for next turn by inverting turn variable
-		this.playerTurn *= -1;
-		
+		this.switchTurn();
 		
 		//TEMP
 		//TODO remove and put in proper place
@@ -125,6 +124,11 @@ public class Board implements Serializable {
 				this.setWinner(this.graveyard.get(i).getColour()*-1);
 			}
 		}
+	}
+	
+	//Switch player turn
+	public void switchTurn() {
+		this.playerTurn *= -1;
 	}
 	
 	//Set winner of game
