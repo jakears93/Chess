@@ -1,4 +1,3 @@
-
 import javafx.scene.*;
 import javafx.scene.control.Button;
 import javafx.scene.image.ImageView;
@@ -28,7 +27,6 @@ import javafx.geometry.Pos;
 
 public class Main extends Application {
 	//Constants
-	
 	Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 	private double screenWidth = screen.getWidth()/2;
 	private double screenHeight = screen.getHeight()/1.5;
@@ -37,15 +35,20 @@ public class Main extends Application {
 
 	final short WHITE = -1;
 	final short BLACK = 1;
+	short gameMode = -1;
+	
+	//Local game board
+	static Board board;
 	
 	//Game-play variables
 	int selectedLocations;
 	static int highlightedTiles[];
-	static Board board;
-	Rectangle playAreaRectangles[];
-	Paint colours[];
 	boolean turnCompleted;
 	boolean gameOver;
+	
+	//Game board Variables
+	Rectangle playAreaRectangles[];
+	Paint colours[];
 	
 	//JavaFX GUI objects
 	StackPane rootStackPane;
@@ -56,9 +59,11 @@ public class Main extends Application {
 	Map<Integer, ImageView> icons;
 	Stage primaryStage;
 	
+	//game server
+	static GameClient client;
+	
 	
 	public static void main(String[] args) {
-		System.out.println("Welcome to Chess");
 		//Start main program GUI
 		launch(args);
 	}
@@ -79,7 +84,6 @@ public class Main extends Application {
 		showMainMenu();
 	}
 	
-	//TODO clean up select piece function
 	public void selectPiece(int selectedTileIndex) {		
 		//Increment selected locations
 		selectedLocations++;
@@ -152,6 +156,9 @@ public class Main extends Application {
 					//Mark turn as complete
 					turnCompleted = true;
 					
+					//Send Turn to server
+					//TODO
+					
 					//Exit for-loop
 					break;
 				}
@@ -205,19 +212,31 @@ public class Main extends Application {
 
 	public void showMainMenu() {
 		//Create buttons to choose either next game or return to main menu
-		Button startGame = new Button();
-		startGame.setMaxHeight(80);
-		startGame.setMaxWidth(200);
-		startGame.setFont(Font.font("Verdana", FontWeight.BOLD, 25));
-		startGame.setText("Start Game");
-		startGame.setOnMouseClicked(event -> {
+		Button localGame = new Button();
+		localGame.setMaxHeight(80);
+		localGame.setMaxWidth(300);
+		localGame.setFont(Font.font("Verdana", FontWeight.BOLD, 25));
+		localGame.setText("Play Local Game");
+		localGame.setOnMouseClicked(event -> {
+			gameMode = 1;
 			cleanup();
-			startGame();
+			startGame(gameMode);
+		});
+		
+		Button onlineGame = new Button();
+		onlineGame.setMaxHeight(80);
+		onlineGame.setMaxWidth(300);
+		onlineGame.setFont(Font.font("Verdana", FontWeight.BOLD, 25));
+		onlineGame.setText("Play Online Game");
+		onlineGame.setOnMouseClicked(event -> {
+			gameMode = 0;
+			cleanup();
+			startGame(gameMode);
 		});
 		
 		Button settings = new Button();
 		settings.setMaxHeight(80);
-		settings.setMaxWidth(200);
+		settings.setMaxWidth(300);
 		settings.setFont(Font.font("Verdana", FontWeight.BOLD, 25));
 		settings.setText("Settings");
 		settings.setOnMouseClicked(event -> {
@@ -225,9 +244,11 @@ public class Main extends Application {
 		});
 	
 		//Add grid layout to root element
-		objectList.add(startGame);
+		objectList.add(localGame);
+		objectList.add(onlineGame);
 		objectList.add(settings);
-		StackPane.setAlignment(startGame, Pos.BOTTOM_LEFT);
+		StackPane.setAlignment(localGame, Pos.BOTTOM_LEFT);
+		StackPane.setAlignment(onlineGame, Pos.BOTTOM_CENTER);
 		StackPane.setAlignment(settings, Pos.BOTTOM_RIGHT);
 	}
 	
@@ -247,7 +268,7 @@ public class Main extends Application {
 		nextGame.setText("Next Game");
 		nextGame.setOnMouseClicked(event -> {
 			cleanup();
-			startGame();
+			startGame(gameMode);
 		});
 		
 		Button mainMenu = new Button();
@@ -339,7 +360,6 @@ public class Main extends Application {
 				setupColour *= -1;
 				playAreaGrid.add(playAreaRectangles[index],x,y,1,1);
 				
-				//TODO remove, onClick now on icons
 				playAreaRectangles[index].setOnMouseClicked( event -> {
 					selectPiece(index);
 				});
@@ -376,7 +396,6 @@ public class Main extends Application {
 		playAreaGrid.setAlignment(Pos.CENTER_LEFT);
 		Insets margin = new Insets(0,0,0,xUnit/2);
 		StackPane.setMargin(playAreaGrid, margin);
-			
 	}
 	
 	//Clear the board
@@ -386,17 +405,25 @@ public class Main extends Application {
 			icons.clear();
 		}
 		objectList.add(title);
-		//setupWindow(primaryStage);
 	}
 	
 	//Start a fresh game
-	public void startGame() {
-		setupBoard();	
+	public void startGame(int gameMode) {
+		if (gameMode ==0) {
+			//TODO online game mode
+			client = new GameClient();
+			client.connect();
+			setupInternalBoard();
+		}
+		else if(gameMode == 1) {
+			setupInternalBoard();
+		}
+			
 		setupPlayArea(primaryStage);
 	}
 	
 	//Setup internal board for fresh game
-	public void setupBoard() {
+	public void setupInternalBoard() {
 		//Clear Values for the clicked index
 		highlightedTiles = new int[64];
 		for(int i=0; i<64; i++) {
