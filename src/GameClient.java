@@ -22,10 +22,15 @@ public class GameClient {
 	BufferedReader terminalInput;
 	
 	//Game-play objects
+	Player player;
 	Board board;
 	int playerTurn = WHITE;
 	int[] lastTurn;
 	boolean isActiveGame;
+	
+	GameClient(Player player){
+		this.player = player;
+	}
 	
 	public void connect() {
 		boolean continueLoop = true;
@@ -38,21 +43,7 @@ public class GameClient {
 		try {
 		    	socket = new Socket(HOSTNAME, PORT); 
 		    	in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		   		out = new PrintWriter(socket.getOutputStream(), true); 
-		   		String setup = in.readLine();
-		   		System.out.println(setup); 
-		   		while(continueLoop) {  	
-					String prompt = in.readLine();
-					System.out.print(prompt);
-					String reply = terminalInput.readLine();
-					out.println(reply);
-					out.flush();
-					String response = in.readLine();
-					System.out.println(response); 
-					if(reply.equals("exit")){
-						continueLoop = false;
-					}
-		   		}            
+		   		out = new PrintWriter(socket.getOutputStream(), true);            
 		} catch (IOException ex) {
 		    		System.err.println(ex);
 		} finally {

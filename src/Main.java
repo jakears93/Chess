@@ -41,6 +41,8 @@ public class Main extends Application {
 	static Board board;
 	
 	//Game-play variables
+	boolean isLoggedIn = false;
+	Player player;
 	int selectedLocations;
 	static int highlightedTiles[];
 	boolean turnCompleted;
@@ -61,7 +63,6 @@ public class Main extends Application {
 	
 	//game server
 	static GameClient client;
-	
 	
 	public static void main(String[] args) {
 		//Start main program GUI
@@ -223,6 +224,17 @@ public class Main extends Application {
 			startGame(gameMode);
 		});
 		
+		Button signIn = new Button();
+		signIn.setMaxHeight(80);
+		signIn.setMaxWidth(300);
+		signIn.setFont(Font.font("Verdana", FontWeight.BOLD, 25));
+		signIn.setText("Sign In");
+		signIn.setOnMouseClicked(event -> {
+			isLoggedIn = login();
+			cleanup();
+			showMainMenu();
+		});
+		
 		Button onlineGame = new Button();
 		onlineGame.setMaxHeight(80);
 		onlineGame.setMaxWidth(300);
@@ -245,11 +257,29 @@ public class Main extends Application {
 	
 		//Add grid layout to root element
 		objectList.add(localGame);
-		objectList.add(onlineGame);
-		objectList.add(settings);
 		StackPane.setAlignment(localGame, Pos.BOTTOM_LEFT);
-		StackPane.setAlignment(onlineGame, Pos.BOTTOM_CENTER);
+		
+		if(isLoggedIn) {
+			objectList.add(onlineGame);
+			StackPane.setAlignment(onlineGame, Pos.BOTTOM_CENTER);
+		}
+		else {
+			objectList.add(signIn);
+			StackPane.setAlignment(signIn, Pos.BOTTOM_CENTER);
+		}
+
+		objectList.add(settings);
 		StackPane.setAlignment(settings, Pos.BOTTOM_RIGHT);
+	}
+	
+	//TODO make login page
+	//TODO authenticate credentials with database
+	public boolean login() {
+		//Populate player object
+		player = new Player("Jacob");
+		title.setText("Welcome back "+player.getUsername()+"!");
+		//Temp
+		return true;
 	}
 	
 	public void showEndGameMenu(String winner) {
@@ -334,8 +364,13 @@ public class Main extends Application {
 	public void setupPlayArea(Stage primaryStage) {
 		
 		//Set Match title
-		//TODO
-		title.setText("Player vs. Player");
+		if(player!=null) {
+			title.setText(player.getUsername()+" vs. Player 2");
+		}
+		else {
+			title.setText("Player 1 vs. Player 2");
+
+		}
 		
 		//Setup playing area
 		playAreaRectangles = new Rectangle[64];
@@ -411,7 +446,7 @@ public class Main extends Application {
 	public void startGame(int gameMode) {
 		if (gameMode ==0) {
 			//TODO online game mode
-			client = new GameClient();
+			client = new GameClient(player);
 			client.connect();
 			setupInternalBoard();
 		}

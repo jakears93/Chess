@@ -1,202 +1,181 @@
-import java.util.Scanner;
 import java.util.concurrent.*;
 import java.net.*;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 class GameServer {
 	public final static int PORT = 40051;
-	public static int clientNum = 1;
-
+	private final static int POOL_SIZE = 5;
+	static List<Player> queue;
+	static ExecutorService gamePool;
+	static boolean serverIsActive = true;
+	final static short WHITE = -1;
+	final static short BLACK = 1;
+	
 //Main Function
 	public static void main(String args[]){
-		ExecutorService pool = Executors.newFixedThreadPool(3);
+		//Initialize Game Pool
+		gamePool = Executors.newFixedThreadPool(POOL_SIZE);
+		
+		//Start MatchMaker
+		ExecutorService matchMaker = Executors.newFixedThreadPool(1);
+		Callable<Void> matchMakerTask = new MatchMaker();
+		matchMaker.submit(matchMakerTask);	
+		
+		queue = new ArrayList<Player>();
 		while(true){
 			try (ServerSocket server = new ServerSocket(PORT)){
 				Socket connection = server.accept();
 				InetAddress inet = connection.getInetAddress();
 				String hostname = inet.getHostName();
 				int clientPort = connection.getPort();
-				String identifier = "Client "+clientNum+" "+hostname+" on port "+clientPort;
-				clientNum++;
-				Callable<Void> task = new TCPServerTask(connection,identifier);
-				pool.submit(task);	
+				String identifier = "Client "+hostname+" on port "+clientPort;
+				
+				//Add player to queue
+				ObjectInputStream ois = new ObjectInputStream(connection.getInputStream());
+				Player player = (Player) ois.readObject();
+				player.setConnection(connection);
+				queue.add(player);
 			} catch (IOException ex){
 				System.out.println("Couldn't start server.");
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}//End of Main
 
-	private static class TCPServerTask implements Callable<Void>{
-		private Socket connection;
-		private String identifier;
-	
-		TCPServerTask(Socket connection, String identifier){
-			this.connection = connection;
-			this.identifier = identifier;
-		}
-	//Stub Functions
-		String count(String[] args) {
-			int count = args.length-1 > 0 ? args.length-1 : 0;
-			String returnValue = count+" words in the command line."; 
-			return returnValue;
-		}// End of Count
+	private static class Game implements Callable<Void>{
+		private Player p1;
+		private Player p2;
+		private OutputStream p1Out, p2Out;
+		private InputStream p1In, p2In;
 		
-		String file(String[] args) {
-			String returnValue = "File: "+args[1]; 
-			//Get File
-			try{
-				File file = new File(args[1]);
-				//Check if it exists
-				if(file.exists()){
-					returnValue+="\tSize: ";
-					long fileSize = file.length();
-					returnValue+=String.valueOf(fileSize);
-					try{
-						BasicFileAttributes attrs;
-						attrs = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-						FileTime time = attrs.creationTime();
+		private Board board;
 	
-						String datePattern = "yyy-MM-dd HH:mm:ss";
-						SimpleDateFormat smf = new SimpleDateFormat(datePattern);
-						String creation = smf.format(new Date(time.toMillis()));
-						
-						returnValue+="\tCreated On: ";
-						returnValue+=creation;
-					} catch (IOException e){
-						e.printStackTrace();
-					}	
-				}
-				else{
-					returnValue="";
-					File currentDir = new File(".");
-					File[] filesList = currentDir.listFiles();
-					for(File f : filesList){
-						returnValue+=f.getName()+"\t";
-					}
-				}
-			} catch (Exception  e){
+		Game(Player p1, Player p2){
+			this.p1 = p1;
+			this.p2 = p2;
+			try {
+				p1Out = p1.getConnection().getOutputStream();
+				p2Out = p2.getConnection().getOutputStream();
+				
+				p1In = p1.getConnection().getInputStream();
+				p2In = p2.getConnection().getInputStream();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-			return returnValue;
-		}//End of file
-
-		String dict(String[] args) {
-			String returnValue = "";
-			try{ 
-			String command = "dict "+args[1];
-			Process process = Runtime.getRuntime().exec(command);
-
-			BufferedReader procInput = new BufferedReader(new 
-     			InputStreamReader(process.getInputStream()));
-
-			BufferedReader procError = new BufferedReader(new 
-     			InputStreamReader(process.getErrorStream()));
-
-			// Read the output from the command
-			String s = null;
-			while ((s = procInput.readLine()) != null) {
-    				returnValue+=s;
-			}
-
-			// Read any errors from the attempted command
-			while ((s = procError.readLine()) != null) {
-    				returnValue+=s;
-			}
-			} catch(IOException e){
-				e.printStackTrace();
-			}
-			return returnValue;
-		}//End of dict
-
-		String convert(String[] args){
-			BufferedReader in = null;
-			PrintWriter out = null; 
-        		Socket socket = null;
-			String toConvert = "";
-			String conversion = "";
-			for(int i=1; i<args.length; i++){
-				toConvert+=args[i]+" ";
-			}
-        
-        		try {
-				System.out.println("Making Socket");
-            			socket = new Socket("localhost", 40151); 
-           			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            			out = new PrintWriter(socket.getOutputStream(), true); 
-			
-				System.out.println("Socket Made");
-				System.out.println("To Convert: "+toConvert);	
-				out.println(toConvert);
-				out.flush();
-				conversion = in.readLine();
-        		} catch (IOException ex) {
-            			System.err.println(ex);
-        		} finally {
-                		try {
-					System.out.println("Closing Local Server Client");
-					in.close();
-					out.close();
-                	    		socket.close();
-					
-                		} catch (IOException ex) {
-                		      	ex.printStackTrace();
-                		}
-            		}	
-			return (identifier+": "+conversion);
-		}//End of convert
-	
-		@Override 
-		public Void call() throws IOException{	
-			BufferedReader input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-			PrintWriter out = new PrintWriter(connection.getOutputStream(), true);
-			Boolean continueLoop = true;
-			
-			System.out.println("Connection made for "+identifier);
-			out.println("Connection made for "+identifier);
-			
-			try{
-				while(connection.isConnected() && continueLoop) {
-					out.println("Enter a Command: ");
-					String commandLine = input.readLine();
-					String[] commands = commandLine.split(" ");
-					
-					if(commands[0].equals("count")){
-						out.println(identifier+": "+count(commands));
-					}
-					else if(commands[0].equals("file")){
-						out.println(identifier+": "+file(commands));
-					}
-					else if(commands[0].equals("dict")){
-						out.println(identifier+": "+dict(commands));
-					}
-					else if(commands[0].equals("convert")){
-						out.println(identifier+": "+convert(commands));
-					}
-					else if(commands[0].equals("exit")){
-						System.out.println(identifier+" has sent an exit code.");
-						continueLoop=false;
-					}
-					else{
-						out.println("Invalid Command");
-					}			
-				}
-			}
-			catch(IOException ex){
-
-			} finally {
-				connection.close();
-				input.close();
-				out.close();
-				System.out.println(identifier+" has disconnected.\n"); 
-				return null;
 			}
 		}
-	}//end of TCPServerTask Class
-}//end of TCPServer Class
+		
+		//Call function is running of game
+		//Assign colour to each player
+		//Start game on white turn
+		//Wait for turn info to be sent
+		//Modify board to reflect turn sent
+		//Switch turns, send last turn to next player
+		//End game, modify mmr of each player
+		@Override 
+		public Void call() throws Exception{
+			//Hold turn information
+			int[] turn = {-1,-1,-1,-1};
+			//Set Piece Colours
+			Random randNum = new Random();
+			if(randNum.nextBoolean()) {
+				p1.setPieceColour(WHITE);
+				p2.setPieceColour(BLACK);
+			}
+			else {
+				p1.setPieceColour(BLACK);
+				p2.setPieceColour(WHITE);
+			}
+		    board = new Board();
+		    board.initBoard();
+			
+		    while(board.hasCheckmate == false) {
+		    	//Send turn info to players
+		    	p1Out.write(board.playerTurn);
+		    	p2Out.write(board.playerTurn);
+		    	p1Out.flush();
+		    	p2Out.flush();
+		    
+		    	//Wait for turn from player
+		    	int index = 0;
+		    	if(board.playerTurn == p1.getPieceColour()) {
+		    		p1In.wait();
+		    		while(p1In.available() != 0) {
+		    			turn[index] = p1In.read();
+		    			index++;
+		    		}
+		    	}
+		    	else {
+		    		p2In.wait();
+		    		while(p2In.available() != 0) {
+		    			turn[index] = p2In.read();
+		    			index++;
+		    		}
+		    	}
+		    	
+		    	//Perform turn on server board
+		    	board.performTurn(turn[0], turn[1]);
+		    	//Perform second piece movement (castling only)
+		    	if(turn[2] != -1) {
+			    	board.performTurn(turn[2], turn[3]);
+		    	}
+		    	
+		    	//Send last turn to new player, turn has already been switched on board so send on match
+		    	if(board.playerTurn == p1.getPieceColour()) {
+		    		for(int i=0; i<4; i++) {
+		    			p1Out.write(turn[i]);
+		    		}
+		    		p1Out.flush();
+		    	}
+		    	else {
+		    		for(int i=0; i<4; i++) {
+		    			p2Out.write(turn[i]);
+		    		}
+		    		p2Out.flush();
+		    	}
+		    	
+		    }
+			
+		    //TODO Game over, now modify mmr and close game
+		    System.out.println("Game Over");
+		    try {
+			    p1In.close();
+			    p1Out.close();
+			    p2In.close();
+			    p2Out.close();
+			    p1.getConnection().close();
+			    p2.getConnection().close();
+		    }
+		    catch (Exception e) {
+		    	
+		    }
+			return null;
+		}
+	}
+	
+	private static class MatchMaker implements Callable<Void>{
+		
+		@Override
+		public Void call() throws Exception {
+			while(serverIsActive) {
+				if(queue.size()>=2) {
+					Player p1 = queue.get(0);
+					Player p2 = queue.get(1);
+					Callable<Void> game = new Game(p1,p2);
+					gamePool.submit(game);
+					
+					//Remove the two players from the queue
+					queue.remove(0);
+					queue.remove(0);
+				}
+			}
+			return null;
+		}
+		
+	}
+}

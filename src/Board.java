@@ -1,8 +1,9 @@
 import java.util.List;
 import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Board {
+public class Board implements Serializable {
 	//Constants
 	final short WHITE=-1;
 	final short BLACK=1;	
@@ -116,9 +117,9 @@ public class Board {
 	private void findCheck() {
 		//Set check and checkmate accordingly
 		//Temp to find if king captured
-		System.out.println("Graveyard List");
+		//System.out.println("Graveyard List");
 		for(int i=0; i<this.graveyard.size(); i++) {
-			System.out.println(this.graveyard.get(i).getColour()+": "+this.graveyard.get(i).getType());
+			//System.out.println(this.graveyard.get(i).getColour()+": "+this.graveyard.get(i).getType());
 			if(this.graveyard.get(i).getType() == 6) {
 				this.hasCheckmate = true;
 				this.setWinner(this.graveyard.get(i).getColour()*-1);
