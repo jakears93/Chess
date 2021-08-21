@@ -13,7 +13,7 @@ class Piece {
 	final short KNIGHT = 4;
 	final short QUEEN = 5;
 	final short KING = 6;
-	
+
 	//Fields
 	private int pieceType;
 	private int colour;

@@ -14,10 +14,10 @@ public class Knight extends Piece{
 		this.moves = new ArrayList<Integer>();
 		
 		if(this.getColour()==-1) {
-			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/whiteKnight.png"));
+			this.icon = new Image(new FileInputStream(Main.DIR_PREFIX+"whiteKnight.png"));
 		}
 		else {
-			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/blackKnight.png"));
+			this.icon = new Image(new FileInputStream(Main.DIR_PREFIX+"blackKnight.png"));
 		}
 	}
 	

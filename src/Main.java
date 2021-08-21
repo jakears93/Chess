@@ -25,6 +25,7 @@ import javafx.geometry.Pos;
 
 public class Main extends Application {
 	//Constants
+	static public String DIR_PREFIX;
 	Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 	private double screenWidth = screen.getWidth()/2;
 	private double screenHeight = screen.getHeight()/1.5;
@@ -63,6 +64,18 @@ public class Main extends Application {
 	static GameClient client;
 	
 	public static void main(String[] args) {
+		//Get OS
+		String OS= System.getProperty("os.name");
+		if(OS.startsWith("Windows")){
+			DIR_PREFIX = System.getProperty("user.dir")+"\\ChessPieces\\";
+		}
+		else if(OS.startsWith("Linux")){
+			DIR_PREFIX = System.getProperty("user.dir")+"/ChessPieces/";
+		}
+		else{
+			System.out.println("Incompatible OS. Exitting Now.");
+			return;
+		}
 		//Start main program GUI
 		launch(args);
 	}
