@@ -14,10 +14,10 @@ public class Queen extends Piece{
 		this.moves = new ArrayList<Integer>();
 		
 		if(this.getColour()==-1) {
-			this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\whiteQueen.png"));
+			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/whiteQueen.png"));
 		}
 		else {
-			this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\blackQueen.png"));
+			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/blackQueen.png"));
 		}
 	}
 	

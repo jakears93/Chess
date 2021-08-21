@@ -14,10 +14,10 @@ public class Rook extends Piece{
 		this.moves = new ArrayList<Integer>();
 		
 		if(this.getColour()==-1) {
-			this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\whiteRook.png"));
+			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/whiteRook.png"));
 		}
 		else {
-			this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\blackRook.png"));
+			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/blackRook.png"));
 		}
 	}
 	

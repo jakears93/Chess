@@ -111,7 +111,6 @@ public class GameClient {
 						}
 					}
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} while(isActiveGame);

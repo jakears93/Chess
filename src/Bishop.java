@@ -14,10 +14,11 @@ public class Bishop extends Piece{
 		this.moves = new ArrayList<Integer>();
 		
 		if(this.getColour()==-1) {
-			this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\whiteBishop.png"));
+			//this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\whiteBishop.png"));
+			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/whiteBishop.png"));
 		}
 		else {
-			this.icon = new Image(new FileInputStream("D:\\Desktop\\ChessPieces\\blackBishop.png"));
+			this.icon = new Image(new FileInputStream(System.getProperty("user.dir")+"/ChessPieces/blackBishop.png"));
 		}
 	}
 	

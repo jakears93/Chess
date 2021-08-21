@@ -41,7 +41,6 @@ class GameServer {
 			} catch (IOException ex){
 				System.out.println("Couldn't start server.");
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -65,7 +64,6 @@ class GameServer {
 				p1In = p1.getConnection().getInputStream();
 				p2In = p2.getConnection().getInputStream();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
