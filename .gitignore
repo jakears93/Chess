@@ -3,3 +3,8 @@
 /.project
 /.settings/
 /objs/
+/out/
+/Chess.iml
+/run
+/clean
+/.idea/

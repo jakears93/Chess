@@ -24,7 +24,7 @@ Great for beginners as the game will highlight which moves are available for eac
 
 4)	Add surrender button
 
-5)	Add timed gamemodes
+5)	Add timed game-modes
 
 6)	Add customization to board and piece styles
 
@@ -42,7 +42,7 @@ Great for beginners as the game will highlight which moves are available for eac
 ## Update Log
 -------------
 #### version 0.1
-1)	Base game uploaded to github
+1)	Base game uploaded to GitHub
 
 2)	Capable of a singular local game of chess
 
